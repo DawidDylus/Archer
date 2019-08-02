@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Public/TimerManager.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AArcherCharacter
@@ -20,6 +21,9 @@ AArcherCharacter::AArcherCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+
+	// Set jump delay (to match animation)
+	JumpDelay = 0.370f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -54,7 +58,7 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AArcherCharacter::DelayJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AArcherCharacter::MoveForward);
@@ -76,6 +80,11 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AArcherCharacter::OnResetVR);
 }
 
+
+void AArcherCharacter::DelayJump()
+{
+	GetWorld()->GetTimerManager().SetTimer(JumpDelayHandle, this, &ACharacter::Jump, JumpDelay);
+}
 
 void AArcherCharacter::OnResetVR()
 {

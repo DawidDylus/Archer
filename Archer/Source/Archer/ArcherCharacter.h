@@ -29,7 +29,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(EditAnywhere, Category=Character)
+		float JumpDelay;
+
 protected:
+	//** Timer Handle for JumpDelay
+	FTimerHandle JumpDelayHandle;
+
+	void DelayJump();
 
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
