@@ -29,7 +29,39 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;	
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float RunSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float SprintSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float SprintSpeedCrouched;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float WalkSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float WalkSpeedCrouched;	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float JumpWalkZVelocity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float JumpRunZVelocity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
+		float JumpSprintZVelocity;
+
 protected:	
+
+	bool bWalkModeActive;
+
+	//** Change MaxWalkingSpeed of MovementComponent to SprintSpeed */
+	void Sprint();
+	
+	//** Depending on movement mode (run/walk) Change MaxWalkingSpeed of Movementcomponent */
+	void StopSprinting();
 	
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();

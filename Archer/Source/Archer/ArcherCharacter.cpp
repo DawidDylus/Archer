@@ -27,12 +27,27 @@ AArcherCharacter::AArcherCharacter()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
+	// Setting up default values for character movement
+	SprintSpeedCrouched = 187.5f;
+	RunSpeed = 375.f;
+	SprintSpeed = 562.5f;
+	WalkSpeed = 93.75f;
+	WalkSpeedCrouched = 46.87f;	
+	bWalkModeActive = false;
+	JumpWalkZVelocity = 375.f;
+	JumpRunZVelocity = 450.f;
+	JumpSprintZVelocity = 562.5f;
+	
+	
+
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-	GetCharacterMovement()->JumpZVelocity = 600.f;
+	GetCharacterMovement()->JumpZVelocity = JumpRunZVelocity;
 	GetCharacterMovement()->AirControl = 0.2f;
-
+	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+	GetCharacterMovement()->MaxWalkSpeedCrouched = WalkSpeedCrouched;	
+	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -61,6 +76,9 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAxis("MoveForward", this, &AArcherCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AArcherCharacter::MoveRight);
 
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AArcherCharacter::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AArcherCharacter::StopSprinting);
+
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
@@ -75,6 +93,26 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AArcherCharacter::OnResetVR);
+}
+
+void AArcherCharacter::Sprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	GetCharacterMovement()->JumpZVelocity = JumpSprintZVelocity;
+}
+
+void AArcherCharacter::StopSprinting()
+{
+	if (!bWalkModeActive)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+		GetCharacterMovement()->JumpZVelocity = JumpRunZVelocity;
+	}
+	else if (bWalkModeActive)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		GetCharacterMovement()->JumpZVelocity = JumpWalkZVelocity;
+	}
 }
 
 void AArcherCharacter::OnResetVR()
