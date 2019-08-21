@@ -36,9 +36,7 @@ AArcherCharacter::AArcherCharacter()
 	bWalkModeActive = false;
 	JumpWalkZVelocity = 375.f;
 	JumpRunZVelocity = 450.f;
-	JumpSprintZVelocity = 562.5f;
-	
-	
+	JumpSprintZVelocity = 562.5f;	
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
