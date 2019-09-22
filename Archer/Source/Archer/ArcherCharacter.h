@@ -17,9 +17,25 @@ class AArcherCharacter : public ACharacter
 
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+	class UCameraComponent* FollowCamera;		
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* ProjectileMesh;	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* ProjectileReleasePoint;
+	
 public:
-	AArcherCharacter();
+	AArcherCharacter();	
+
+protected:
+	virtual void BeginPlay();
+
+public:
+
+	/** Projectile class to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	TSubclassOf<class AProjectile> ProjectileClass;		
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -53,15 +69,50 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
 		float JumpSprintZVelocity;
 
-protected:	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
+		bool bIsAiming;
 
-	bool bWalkModeActive;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile)
+		FVector DefaultProjectileLocation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile)
+		FRotator DefaultProjectileRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
+		class UAnimMontage* DrawArrowAnimation;
+
+protected:		
+
+	bool bIsArrowLoaded;
+
+	bool bWalkModeActive;	
+	
+	bool bIsSprintingAllowed;
+
+	//** Spawn ProjectileClas, works only if bIsLoaded = true*/
+	void Shoot();
+	
+	//** Turn On/Off WalkMode (Change MaxWalkingSpeed) */
+	void ToggleWalkMode();	
 
 	//** Change MaxWalkingSpeed of MovementComponent to SprintSpeed */
 	void Sprint();
 	
 	//** Depending on movement mode (run/walk) Change MaxWalkingSpeed of Movementcomponent */
 	void StopSprinting();
+
+	/**
+	 * Play specified animation
+	 * @param AnimationToPlay - Pointer to AnimationMontage that will be played
+	 * @param bPlayInReverse - Should or should not play animation in reverse
+	 * @return true if animation was played correctly.
+	 */
+	bool PlayMontageAnimation(class UAnimMontage* AnimationToPlay, const bool bPlayInReverse);
+	
+	//** Change Field of View to zoom, UseControllerRotationPitch to true */
+	void Aim();
+	
+	void StopAiming();
 	
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
@@ -100,5 +151,7 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	//** Returns ProjectileMesh subobject **/
+	FORCEINLINE class UStaticMeshComponent* GetProjectileMesh() const { return ProjectileMesh; }
 };
 

@@ -90,3 +90,10 @@ Content/InfinityBladeGrassLands/*
 Content/InfinityBladeFireLands/*
 Content/InfinityBladeEffects/*
 Content/InfinityBladeAdversaries/*
+
+# UE4 Downloaded pack Content
+Content/DynamicGrassLite/*
+Content/KiteDemo/*
+Content/PhotoR_Backgrounds/*
+Content/ProceduralNaturePack/*
+Content/WaterMaterials/*
