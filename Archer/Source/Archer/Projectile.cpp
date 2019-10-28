@@ -12,8 +12,9 @@ AProjectile::AProjectile()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;	
 
-	// Default value for offsetting spawning location (grip location)
-	ProjectileGripPointOffset = FVector(0.f, 0.f, 0.f);
+	// Default value for offsetting location and rotation to be grabed and pointed in desired direction 
+	ProjectileAimGripPointOffset = FVector(0.f, 0.f, 0.f);
+	ProjectileAimPointRotationOffset = FRotator(0.f, 0.f, 0.f);
 
 	// Create sphere collision
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
@@ -35,8 +36,8 @@ AProjectile::AProjectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 3000.f;
-	ProjectileMovement->MaxSpeed = 3000.f;
+	ProjectileMovement->InitialSpeed = 6000.f;
+	ProjectileMovement->MaxSpeed = 6000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
 

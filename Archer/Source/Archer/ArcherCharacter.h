@@ -24,18 +24,24 @@ class AArcherCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile, meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* ProjectileReleasePoint;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* WeaponMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* BowGripOffset;
+
 public:
 	AArcherCharacter();	
 
 protected:
 	virtual void BeginPlay();
-
+		
 public:
 
 	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
-	TSubclassOf<class AProjectile> ProjectileClass;		
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile)
+	TSubclassOf<class AProjectile> ProjectileClass;	
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -69,25 +75,60 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Character)
 		float JumpSprintZVelocity;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Character)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
 		bool bIsAiming;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile)
-		FVector DefaultProjectileLocation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
+		float MaxUpperBodyRotation;	
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Projectile)
-		FRotator DefaultProjectileRotation;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character)
+		bool bIsWeaponEquipped;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Character)
-		class UAnimMontage* DrawArrowAnimation;
+		bool bIsArrowLoaded;	
 
-protected:		
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float CameraMovementAlpha;
 
-	bool bIsArrowLoaded;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float DefaultTargetArmLength;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float DefaultFieldOfView;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float DefaultCameraBoomSocketOffsetY;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float AimModeTargetArmLength;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float AimModeFieldOfView;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim Camera / Smooth Zoom")
+		float AimModeCameraBoomSocketOffsetY;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Montage Animations")
+		class UAnimMontage* DrawArrowLoopSectionMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Montage Animations")
+		class UAnimMontage* DrawArrowMontage;	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Montage Animations")
+		class UAnimMontage* EquipWeaponMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Montage Animations")
+		class UAnimMontage* DisarmWeaponMontage;
+	
+
+protected:			
 
 	bool bWalkModeActive;	
 	
-	bool bIsSprintingAllowed;
+	bool bIsSprintingAllowed;	
+
+	//** Attach and make visible mesh of a weapon to character*/
+	void EquipWeapon();
 
 	//** Spawn ProjectileClas, works only if bIsLoaded = true*/
 	void Shoot();
@@ -153,5 +194,11 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	//** Returns ProjectileMesh subobject **/
 	FORCEINLINE class UStaticMeshComponent* GetProjectileMesh() const { return ProjectileMesh; }
+	//** Returns ProjectileReleasePoint subobject **/
+	FORCEINLINE	class USceneComponent* GetProjectileReleasePoint() const { return ProjectileReleasePoint; }
+	//** Returns WeaponMesh subobject **/
+	FORCEINLINE class  UStaticMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	//** Returns BowGripOffset subobject**/
+	FORCEINLINE  class USceneComponent* GetBowGripOffset() const { return BowGripOffset; }	
 };
 

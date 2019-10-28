@@ -8,6 +8,7 @@
 #include "Animation/AnimInstance.h"
 #include "Components/StaticMeshComponent.h"
 #include "Projectile.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -31,22 +32,38 @@ AArcherCharacter::AArcherCharacter()
 	// Set default value for aiming mode;
 	bIsAiming = false;
 
+	// Set default value;
+	bool bIsWeaponEquipped = false;
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
+	bUseControllerRotationRoll = false;	   
 
+	// Set Default values for camera smooth zoom in and out (change to aim mode)	
+	CameraMovementAlpha = 0.1f;
+
+	DefaultTargetArmLength = 300.0f;
+	DefaultFieldOfView = 90.0f;
+	DefaultCameraBoomSocketOffsetY = 0.0f;
+
+	AimModeTargetArmLength = 200.0f;
+	AimModeFieldOfView = 70.0f;	
+	AimModeCameraBoomSocketOffsetY = 60.0f;
+	
 	// Setting up default values for character movement
 	SprintSpeedCrouched = 187.5f;
 	RunSpeed = 375.f;
 	SprintSpeed = 562.5f;
-	WalkSpeed = 93.75f;
+	WalkSpeed = 180.5f;  //  93.75f;
 	WalkSpeedCrouched = 46.87f;	
 	bWalkModeActive = false;
 	JumpWalkZVelocity = 375.f;
 	JumpRunZVelocity = 450.f;
 	JumpSprintZVelocity = 562.5f;	
 	bIsSprintingAllowed = true;	
+
+	MaxUpperBodyRotation = 90.0f;
 	
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -57,16 +74,23 @@ AArcherCharacter::AArcherCharacter()
 	GetCharacterMovement()->MaxWalkSpeedCrouched = WalkSpeedCrouched;	
 
 	// Create projectile static mesh component to use it in animation that require seeing a projectile
-	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));	
+	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));		
 	ProjectileMesh->SetHiddenInGame(true, true);
-	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	DefaultProjectileLocation = FVector(0.0f, -4.0f, 30.0f);	
-	DefaultProjectileRotation = FRotator(0.0f, 30.0f, -100.0f);
-	ProjectileMesh->SetRelativeLocationAndRotation(DefaultProjectileLocation, DefaultProjectileRotation);
+	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);	
+
+	BowGripOffset = CreateDefaultSubobject<USceneComponent>(TEXT("BowGripOffset"));
+	BowGripOffset->SetupAttachment(GetMesh());
+
+	// Create Weapon tatic mesh component and make it hidden in game
+	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));	
+	WeaponMesh->SetupAttachment(BowGripOffset);
+	
+	WeaponMesh->SetHiddenInGame(true, true);
 
 	// Create point at whitch projectiles will be spawned (shoot from)
-	ProjectileReleasePoint = CreateEditorOnlyDefaultSubobject<USceneComponent>(TEXT("ProjectileReleasePoint"));
-	ProjectileReleasePoint->SetupAttachment(GetMesh());
+	// TODO change attachment to the bow when separate static mesh for weapon is made.
+	ProjectileReleasePoint = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileReleasePoint"));
+	ProjectileReleasePoint->SetupAttachment(WeaponMesh);
 	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -90,7 +114,10 @@ void AArcherCharacter::BeginPlay()
 
 	//Attach projectile mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
 	ProjectileMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("RightHandGripPoint"));
+
+	BowGripOffset->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("LeftHandGripPoint"));
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -115,6 +142,8 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 
 	PlayerInputComponent->BindAction("WalkMode", IE_Pressed, this, &AArcherCharacter::ToggleWalkMode);
 
+	PlayerInputComponent->BindAction("EquipWeapon", IE_Pressed, this, &AArcherCharacter::EquipWeapon);
+
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
@@ -132,6 +161,24 @@ void AArcherCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 }
 
 
+void AArcherCharacter::EquipWeapon()
+{
+	if (!bIsWeaponEquipped)
+	{
+		if (PlayMontageAnimation(EquipWeaponMontage, false))
+		{
+			bIsWeaponEquipped = true;			
+		}		
+	}
+	else if (bIsWeaponEquipped)
+	{		
+		if (PlayMontageAnimation(DisarmWeaponMontage, false))
+		{
+			bIsWeaponEquipped = false;			
+		}				
+	}	
+}
+
 void AArcherCharacter::Shoot()
 {
 	if (bIsAiming && bIsArrowLoaded && ProjectileClass != NULL)
@@ -144,9 +191,13 @@ void AArcherCharacter::Shoot()
 
 			FRotator SpawnRotation = Controller->GetControlRotation();
 			FVector SpawnLocation = ProjectileReleasePoint->GetComponentLocation();
-			
 
-			World->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);				
+			World->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);			
+
+			ProjectileMesh->SetHiddenInGame(true, true);
+			bIsArrowLoaded = false;
+
+			ProjectileMesh->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f));
 		}		
 	}	
 }
@@ -209,10 +260,10 @@ bool AArcherCharacter::PlayMontageAnimation(UAnimMontage* AnimationToPlay, const
 			if (!bPlayInReverse)
 			{
 				AnimInstance->Montage_Play(AnimationToPlay, 1.0f);
-			}
+			}			
 			else if (bPlayInReverse)
 			{
-				AnimInstance->Montage_Play(AnimationToPlay, -1.0f, EMontagePlayReturnType::MontageLength, 1.0f);
+				AnimInstance->Montage_Play(AnimationToPlay, -1.0f, EMontagePlayReturnType::MontageLength, 1.0f);							
 			}	
 			return true;
 		}		
@@ -224,56 +275,51 @@ bool AArcherCharacter::PlayMontageAnimation(UAnimMontage* AnimationToPlay, const
 // Help to return to walk mode that was set befor aim function.
 bool bWasWalkModeChanged = false;
 void AArcherCharacter::Aim()
-{
-	bIsAiming = true;
-
-	// Adjust camera to better fit aiming 
-	bUseControllerRotationYaw = true;		
-	FollowCamera->FieldOfView = 70;
-	
-	// Adjust movement settings while aiming
-	GetCharacterMovement()->SetJumpAllowed(false);
-	if (!bWalkModeActive)
-	{		
-		ToggleWalkMode();
-		bWasWalkModeChanged = true;		
-	}		
-	
-	// Play Drawing arrow animation if needed
-	if (!bIsArrowLoaded && ProjectileClass != NULL)
+{	
+	if (bIsWeaponEquipped && ProjectileClass != NULL)
 	{
-		if (PlayMontageAnimation(DrawArrowAnimation, false))
+		bIsAiming = true;
+
+		// Adjust movement settings while aiming
+		GetCharacterMovement()->SetJumpAllowed(false);
+		if (!bWalkModeActive)
 		{
-			bIsArrowLoaded = true;			
-		}		
-	}
+			ToggleWalkMode();
+			bWasWalkModeChanged = true;
+		}
+
+		// Play Drawing arrow animation if needed
+		if (!bIsArrowLoaded)
+		{
+			/**bIsArrowLoaded will be change to true (in BP animinstance) after draw arrow montage was played (notify) */
+			PlayMontageAnimation(DrawArrowMontage, false);
+		}
+	}	
 }
 
 void AArcherCharacter::StopAiming()
-{	
+{
 	bIsAiming = false;
-
-	// Set camera options back to normal
-	bUseControllerRotationYaw = false;
-	FollowCamera->FieldOfView = 90;
 
 	// Set movement settings back to normal
 	GetCharacterMovement()->SetJumpAllowed(true);
 	if (bWasWalkModeChanged)
-	{		
+	{
 		ToggleWalkMode();
 		bWasWalkModeChanged = false;
-	}
+	}		
 
-	// Play Drawing arrow animation (in reverse) if needed
-	if (bIsArrowLoaded)
+	// Play Drawing arrow animation if needed
+	if (bIsArrowLoaded && bIsWeaponEquipped)
 	{
-		if (PlayMontageAnimation(DrawArrowAnimation, true))
-		{
-			bIsArrowLoaded = false;
-			// TODO Destroy arrow on bow. 	
-		}
-	}	
+		/**bIsArrowLoaded will be change to false (in BP animinstance) after draw arrow montage was played (notify) */
+		PlayMontageAnimation(DrawArrowMontage, true);
+	}
+	else
+	{
+		PlayMontageAnimation(DrawArrowLoopSectionMontage, true);
+	}
+	// TODO Add timer to wait for animation to stop playing so that it bCanAim will be change back to true 
 }
 
 void AArcherCharacter::OnResetVR()

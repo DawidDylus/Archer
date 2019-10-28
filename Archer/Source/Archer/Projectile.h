@@ -27,9 +27,13 @@ public:
 	// Sets default values for this actor's properties
 	AProjectile();
 
-	// Alter value of spawning projectile location (point that hand will grab)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GripPoint)
-	FVector ProjectileGripPointOffset;
+	// set default offset for arrow grip point while aiming (to grip end of arrow)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aim Grip Offset")
+	FVector ProjectileAimGripPointOffset;
+
+	// set default offset for arrow rotation while aiming (to point in right direction) 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aim Grip Offset")
+		FRotator ProjectileAimPointRotationOffset;
 
 	/** called when projectile hits something */
 	UFUNCTION()
